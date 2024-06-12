@@ -5,16 +5,16 @@
 #include <WiFiClientSecure.h>
 
 #include "const.h"
-// #include "db.h"
+#include "db.h"
 
 #define TELEGRAM_DEBUG 1
 
+X509List cert(TELEGRAM_CERTIFICATE_ROOT);
 
 WiFiClientSecure client;
 UniversalTelegramBot bot(BOTtoken, client);
 
-// Checks for new messages every 1 second.
-int botRequestDelay = 0;
+int botRequestDelay = 1; // milliseconds
 unsigned long lastTimeBotRan;
 
 // Handle what happens when you receive new messages
@@ -34,29 +34,64 @@ void handleNewMessages(int numNewMessages) {
         String text = bot.messages[i].text;
         Serial.println(text);
 
+        if (text[0] != '!')
+            return;
+
         String from_name = bot.messages[i].from_name;
         String from_id = bot.messages[i].from_id;
 
-        if (text == "/ola") {
-            String welcome = "Ola, " + from_name + "!\n";
-            bot.sendMessage(chat_id, welcome, "");
+
+        String* params = new String[10];
+        uint8 params_size = 0;
+        String alt = "";
+        for (unsigned int j = 0; j< text.length(); j++){
+            if (text[j] != ' '){
+                alt+=text[j];
+            }else if (alt != ""){
+                params[params_size] = alt; 
+                params_size++;
+                alt = "";
+                // if (sizeof(params) == params_size ) {
+                //     String 
+                // }
+            }
+        }
+        if (alt != ""){
+            params[params_size] = alt; 
+            params_size++;
         }
 
-        // if (text == "!create") {
-        //   Person p = {
-        //     .name = {'p','e','d','r','o'},
-        //     .caps = 0,
-        //     .id = from_id.toInt()
-        //   };
-        //   addPerson(p);
-        //   bot.sendMessage(chat_id, "teste", "");
-        // }
+        for (unsigned int j = 0; j< params_size; j++){
+            Serial.print(params[j]);
+            Serial.print(" ");
+        }
+        Serial.println();
 
-        // if (text == "!add") {
-        //   int q = addCaps(1,from_id.toInt());
 
-        //   bot.sendMessage(chat_id, "Agora você tem: "+String(q)+" Capsulas", "");
-        // }
+        if (text == "!ola") {
+            String welcome = "Ola, " + from_name + "!\n";
+            bot.sendMessage(chat_id, from_id, "");
+        }
+
+        if (params[0] == "!create" && params_size == 2) {
+            Person p = {.caps = 0};
+            memccpy(p.id, from_id.c_str(), 0, 10);
+            memccpy(p.name, &params[1], 0, params[1].length());
+
+            Person new_p = addPerson(p);
+
+            String personStringfy = "name: " + String(new_p.name) + "\nCaps: " + String(new_p.caps);
+            bot.sendMessage(chat_id, personStringfy , "");
+        }
+
+        if (params[0] == "!add" && params_size == 2) {
+            int q = addCaps(atoi(params[1].c_str()),(char*)from_id.c_str());
+            if (q == -1){
+                bot.sendMessage(chat_id, "Usuário não criado. Use -> !create [apelido]", "");
+            }else {
+                bot.sendMessage(chat_id, "Agora você tem: " + String(q) + " Capsulas", "");
+            }
+        }
     }
 }
 
@@ -64,7 +99,6 @@ void setup() {
     Serial.begin(115200);
 
 #ifdef ESP8266
-    X509List cert(TELEGRAM_CERTIFICATE_ROOT);
     configTime(0, 0, "pool.ntp.org");  // get UTC time via NTP
     client.setTrustAnchors(&cert);     // Add root certificate for api.telegram.org
 #endif
@@ -85,12 +119,12 @@ void setup() {
     Serial.println(WiFi.localIP());
 }
 
-int numNewMessages = 0;
+// int numNewMessages = 0;
 
 void loop() {
     if (millis() > lastTimeBotRan + botRequestDelay) {
         // Serial.println("opa");
-        numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+        int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
 
         while (numNewMessages > 0) {
             Serial.println("got response");
@@ -100,5 +134,4 @@ void loop() {
         lastTimeBotRan = millis();
     }
     // Serial.println(numNewMessages);
-
 }

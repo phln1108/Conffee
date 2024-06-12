@@ -2,22 +2,26 @@
 
 #include <EEPROM.h>
 
-char persons_size = 0;
+unsigned char persons_size = 0;
 
-Person* persons;
+Person* persons = new Person[10];
 
-bool addPerson(Person p) {
+Person addPerson(Person p) {
+    for (unsigned char i = 0; i< persons_size; i++){
+        if (String(p.id) == String(persons[i].id)) 
+            return p;
+    }
     persons[persons_size] = p;
     persons_size++;
-    return true;
+    return p;
 }
 // bool removePerson(char person_id);
 
-char addCaps(char quantity, int person_id) {
-    if (quantity <= 0)
+int addCaps(int quantity, char person_id[10]) {
+    if (quantity <= 0 || quantity >= 255)
         return -1;
-    for (char i = 0; i < persons_size; i++) {
-        if (persons[i].id == person_id) {
+    for (unsigned char i = 0; i < persons_size; i++) {
+        if (String(persons[i].id) == String(person_id)) {
             persons[i].caps += quantity;
             return persons[i].caps;
         }
@@ -25,20 +29,20 @@ char addCaps(char quantity, int person_id) {
     return -1;
 }
 
-char borrowCaps(char quantity, int person_id) {
+int borrowCaps(char quantity, char person_id[10]) {
     if (quantity <= 0)
         return -1;
-    for (char i = 0; i < persons_size; i++) {
-        if (persons[i].id == person_id && persons[i].caps >= quantity) {
-            persons[i].caps += quantity;
+    for (unsigned char i = 0; i < persons_size; i++) {
+        if (String(persons[i].id) == String(person_id)) {
+            persons[i].caps -= quantity;
             return persons[i].caps;
         }
     }
     return -1;
 }
 
-char seeCaps(char person_id) {
-    for (char i = 0; i < persons_size; i++, persons++) {
+int seeCaps(char person_id[10]) {
+    for (unsigned char i = 0; i < persons_size; i++, persons++) {
         if (persons[persons_size].id == person_id) {
             return persons[i].caps;
         }
@@ -49,7 +53,7 @@ char seeCaps(char person_id) {
 ListCaps seeAllCaps() {
     ListCaps list;
     list.size = persons_size;
-    for (char i = 0; i < persons_size; i++) {
+    for (unsigned char i = 0; i < persons_size; i++) {
         PersonCaps allCaps;
         memccpy(allCaps.name, persons[i].name, 0, 10);
         allCaps.caps = persons[i].caps;

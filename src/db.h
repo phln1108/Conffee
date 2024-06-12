@@ -4,8 +4,8 @@
 
 struct Person {
     char name[10];
-    char caps;
-    int id;
+    int caps;
+    char id[10];
 };
 
 struct PersonCaps {
@@ -20,15 +20,15 @@ struct ListCaps {
 
 
 
-bool addPerson(Person p);
+Person addPerson(Person p);
 
 bool removePerson(char person_id);
 
-char addCaps(char quantity, int person_id);
+int addCaps(int quantity, char person_id[10]);
 
-char borrowCaps(char quantity, int person_id);
+int borrowCaps(char quantity, char person_id[10]);
 
-char seeCaps(char person_id);
+int seeCaps(char person_id[10]);
 
 ListCaps seeAllCaps();
 
