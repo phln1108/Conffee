@@ -9,7 +9,7 @@ Person* persons = new Person[10];
 Person addPerson(Person p) {
     for (unsigned char i = 0; i< persons_size; i++){
         if (String(p.id) == String(persons[i].id)) 
-            return p;
+            return persons[i];
     }
     persons[persons_size] = p;
     persons_size++;
